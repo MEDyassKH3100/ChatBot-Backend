@@ -1,11 +1,20 @@
-const UserService = require('../services/user.services');
+const UserModel = require('../model/user.model');
 
-exports.register = async(req,res,next)=>{
-    try{
-        const {nom,prenom,cin,identifiant,email,mdp} = req.body;
-        const successRes = await UserService.registerUser(nom, prenom, cin, identifiant, email, mdp);
-        res.json({status:true,success:"User Registered Successfuly"});
-    } catch (error){
-        res.status(500).json({ status: false, error: 'User Registration Failed' });
-    }
+exports.register = (req,res)=>{
+/*
+const user = new UserModel(req.body)
+user.save()
+*/
+
+    UserModel.create(req.body)
+    .then(newuser => res.status(200).json(newuser))
+    .catch(err => res.status(400).json(err))
+}
+
+
+exports.getAll =(req,res) =>{
+UserModel.find()
+.then(users => res.status(200).json(users))
+.catch(err => res.status(400).json(err))
+
 }
