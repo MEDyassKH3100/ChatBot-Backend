@@ -1,12 +1,9 @@
 const express = require('express');
-//const body_parser = require('body-parser');
 const userRouter = require('./routers/user.router');
 
-// import express modele
 const app = express();
 
-//app.use(body_parser.json());
-app.use('/',userRouter);
+app.use(express.json());
+app.use('/', userRouter); // Utilisez /api comme préfixe pour toutes les routes
 
-// export our app 
-module.exports = app ;
+module.exports = app;

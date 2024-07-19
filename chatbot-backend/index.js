@@ -2,10 +2,9 @@ const express = require('express');
 const db = require('./config/db');
 const UserModel = require ('./model/user.model')
 
-const app = express();
 
 // create express server
-
+const app = require('./app');
 const port = 3000;
 app.use(express.json())
 
