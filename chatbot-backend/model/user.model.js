@@ -15,7 +15,7 @@ const userSchema = new Schema({
     type: String,
     required: [true, 'Le prénom est requis.'],
     maxlength: [20, 'Le prénom ne peut pas dépasser 20 caractères.'],
-    match: [/^[A-Za-z]+$/, 'Le prénom doit être alphabétique.']
+    match: [/^[A-Za-z\s]+$/, 'Le prénom doit être alphabétique et peut contenir des espaces.']
   },
   cin: {
     type: Number,
