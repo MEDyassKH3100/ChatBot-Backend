@@ -1,0 +1,1 @@
+const UserModel = require("../model/attestaion.model");
