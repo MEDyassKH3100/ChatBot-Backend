@@ -4,6 +4,8 @@ const UserModel = require("./model/user.model");
 const app = express();
 const userRouter = require("./routers/user.router");
 const morgan = require("morgan");
+const AttestationModel = require("./model/attestation.model");
+const attestationRouter = require("./routers/attestation.route");
 
 app.use(express.json());
 // Utilisez /api comme préfixe pour toutes les routes
@@ -13,6 +15,7 @@ app.use(morgan("dev"));
 const port = 3000;
 
 app.use("/user", userRouter);
+app.use("/attestation", attestationRouter);
 app.listen(port, () => {
   console.log(`Server Listening on port http://localhost:${port}`);
 });
