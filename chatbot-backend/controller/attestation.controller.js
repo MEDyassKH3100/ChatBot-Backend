@@ -1,21 +1,25 @@
 const Attestation = require("../model/attestation.model");
+const mongoose = require('mongoose');
 
 exports.createAttestation = async (req, res) => {
   try {
+    const studentId = new mongoose.Types.ObjectId(req.user._id);
+    
     const attestation = new Attestation({
-      user: req.user._id, // Associe l'attestation à l'utilisateur connecté
-      fullname: `${req.user.prenom} ${req.user.nom}`,
+      studentId: studentId,
+      fullName: `${req.user.prenom} ${req.user.nom}`,
       type: req.body.type,
+      course: req.body.course,
       year: req.body.year,
-      status: "en attente",
+      status: "En attente",
+      additionalDetails: req.body.additionalDetails || ""
     });
 
     await attestation.save();
     res.status(200).send(attestation);
   } catch (error) {
-    res
-      .status(400)
-      .send({ message: "Erreur lors de la création de l'attestation", error });
+    console.error(error);  // Pour vérifier si l'erreur persiste
+    res.status(400).send({ message: "Erreur lors de la création de l'attestation", error });
   }
 };
 
@@ -27,12 +31,10 @@ exports.getAllAttestations = async (req, res) => {
     );
     res.status(200).send(attestations);
   } catch (error) {
-    res
-      .status(400)
-      .send({
-        message: "Erreur lors de la récupération des attestations",
-        error,
-      });
+    res.status(400).send({
+      message: "Erreur lors de la récupération des attestations",
+      error,
+    });
   }
 };
 
@@ -47,12 +49,10 @@ exports.getAttestationById = async (req, res) => {
     }
     res.status(200).send(attestation);
   } catch (error) {
-    res
-      .status(400)
-      .send({
-        message: "Erreur lors de la récupération de l'attestation",
-        error,
-      });
+    res.status(400).send({
+      message: "Erreur lors de la récupération de l'attestation",
+      error,
+    });
   }
 };
 
@@ -68,12 +68,10 @@ exports.updateAttestation = async (req, res) => {
     }
     res.status(200).send(attestation);
   } catch (error) {
-    res
-      .status(400)
-      .send({
-        message: "Erreur lors de la mise à jour de l'attestation",
-        error,
-      });
+    res.status(400).send({
+      message: "Erreur lors de la mise à jour de l'attestation",
+      error,
+    });
   }
 };
 
@@ -85,11 +83,9 @@ exports.deleteAttestation = async (req, res) => {
     }
     res.status(200).send({ message: "Attestation supprimée avec succès" });
   } catch (error) {
-    res
-      .status(400)
-      .send({
-        message: "Erreur lors de la suppression de l'attestation",
-        error,
-      });
+    res.status(400).send({
+      message: "Erreur lors de la suppression de l'attestation",
+      error,
+    });
   }
 };
