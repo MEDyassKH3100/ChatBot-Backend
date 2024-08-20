@@ -25,10 +25,7 @@ exports.createAttestation = async (req, res) => {
 
 exports.getAllAttestations = async (req, res) => {
   try {
-    const attestations = await Attestation.find().populate(
-      "user",
-      "prenom nom email"
-    );
+    const attestations = await Attestation.find();
     res.status(200).send(attestations);
   } catch (error) {
     res.status(400).send({
@@ -40,10 +37,7 @@ exports.getAllAttestations = async (req, res) => {
 
 exports.getAttestationById = async (req, res) => {
   try {
-    const attestation = await Attestation.findById(req.params.id).populate(
-      "user",
-      "prenom nom email"
-    );
+    const attestation = await Attestation.findById(req.params.id);
     if (!attestation) {
       return res.status(400).send({ message: "Attestation non trouvée" });
     }
