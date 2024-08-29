@@ -18,4 +18,8 @@ router.put("/:id", auth, attestationController.updateAttestation);
 // Route pour supprimer une attestation par ID
 router.delete("/:id", auth, attestationController.deleteAttestation);
 
+// Route pour générer un PDF d'attestation
+router.post("/generate-pdf/:id", auth, attestationController.generatePDF);
+
+
 module.exports = router;

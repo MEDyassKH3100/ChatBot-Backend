@@ -24,6 +24,8 @@ const attestationSchema = new Schema({
     default: "En attente",
   },
   additionalDetails: { type: String, default: "" },
+  pdfPath: { type: String },
+  // Ajout du chemin du PDF généré
 });
 
 // Middleware pour générer le fullName avant de sauvegarder le document
