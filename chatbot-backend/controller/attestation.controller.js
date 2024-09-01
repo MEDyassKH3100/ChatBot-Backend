@@ -1,8 +1,9 @@
 const Attestation = require("../model/attestation.model");
 const mongoose = require("mongoose");
-const PDFDocument = require("pdfkit");
+const PDFKit = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
+const { PDFDocument, rgb, StandardFonts } = require("pdf-lib");
 
 exports.createAttestation = async (req, res) => {
   try {
@@ -119,12 +120,10 @@ exports.generatePDF = async (req, res) => {
     const writeStream = fs.createWriteStream(filePath);
     writeStream.on("error", (err) => {
       console.error("Erreur lors de l'écriture du fichier:", err);
-      return res
-        .status(500)
-        .send({
-          message: "Erreur lors de l'écriture du fichier PDF",
-          error: err,
-        });
+      return res.status(500).send({
+        message: "Erreur lors de l'écriture du fichier PDF",
+        error: err,
+      });
     });
 
     doc.pipe(writeStream);
@@ -149,6 +148,160 @@ exports.generatePDF = async (req, res) => {
     console.error("Erreur lors de la génération du PDF:", error);
     res
       .status(500)
+      .send({ message: "Erreur lors de la génération du PDF", error });
+  }
+};
+
+exports.generateStageRequestPDF = async (req, res) => {
+  try {
+    const { fullName, course, year } = req.body;
+
+    // Charger le template PDF
+    const templatePath = path.join(__dirname, "../templates/attestation.pdf");
+    const existingPdfBytes = fs.readFileSync(templatePath);
+
+    // Charger le document PDF à partir du template
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+    const pages = pdfDoc.getPages();
+    const firstPage = pages[0];
+
+    // Charger les polices
+    const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+    const timesRomanBoldFont = await pdfDoc.embedFont(
+      StandardFonts.TimesRomanBold
+    );
+
+    // Gérer la date actuelle dans le format DD/MM/YYYY
+    const currentDate = new Date();
+    const formattedDate = `${String(currentDate.getDate()).padStart(
+      2,
+      "0"
+    )}/${String(currentDate.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}/${currentDate.getFullYear()}`;
+
+    // Calculer la largeur du texte pour centrer les paragraphes
+    const drawTextCentered = (text, y, font, size) => {
+      const textWidth = font.widthOfTextAtSize(text, size);
+      const pageWidth = firstPage.getWidth();
+      const x = (pageWidth - textWidth) / 2;
+      firstPage.drawText(text, { x, y, size, font, color: rgb(0, 0, 0) });
+    };
+
+    // Remplacer la date en haut à droite
+    firstPage.drawText(`Tunis, le : ${formattedDate}`, {
+      x: 400,
+      y: 750,
+      size: 12,
+      font: timesRomanFont,
+      color: rgb(0, 0, 0),
+    });
+
+    // Ajouter le contenu spécifique en centrant le texte
+    drawTextCentered(
+      "A l’aimable attention de la Direction Générale",
+      700,
+      timesRomanBoldFont,
+      12
+    );
+    drawTextCentered("Objet: Demande de Stage", 680, timesRomanBoldFont, 12);
+    drawTextCentered("Madame, Monsieur,", 660, timesRomanFont, 12);
+    drawTextCentered(
+      "L’Ecole Supérieure Privée d’Ingénierie et de Technologies, ESPRIT SA, est un établissement",
+      640,
+      timesRomanFont,
+      12
+    );
+    drawTextCentered(
+      "d’enseignement supérieur privé ayant pour objet principal, la formation d’ingénieurs dans les domaines",
+      620,
+      timesRomanFont,
+      12
+    );
+    drawTextCentered(
+      "des technologies de l’information et de la communication.",
+      600,
+      timesRomanFont,
+      12
+    );
+    drawTextCentered(
+      "Notre objectif consiste à former des ingénieurs opérationnels au terme de leur formation.",
+      580,
+      timesRomanFont,
+      12
+    );
+    drawTextCentered(
+      "Dès lors, nous encourageons nos élèves à mettre en pratique le savoir et les compétences qu’ils ont acquis",
+      560,
+      timesRomanFont,
+      12
+    );
+    drawTextCentered(
+      "au cours de leur cursus universitaire.",
+      540,
+      timesRomanFont,
+      12
+    );
+    drawTextCentered(
+      "C’est également dans le but de les amener à s’intégrer dans l’environnement de l’entreprise que nous vous",
+      520,
+      timesRomanFont,
+      12
+    );
+    drawTextCentered(
+      "demandons de bien vouloir accepter :",
+      500,
+      timesRomanFont,
+      12
+    );
+
+    drawTextCentered(
+      `L’étudiant(e) : ${fullName}`,
+      480,
+      timesRomanBoldFont,
+      12
+    );
+    drawTextCentered(`Inscrit(e) en : ${course}`, 460, timesRomanBoldFont, 12);
+    drawTextCentered(
+      "Pour effectuer un stage obligatoire, au sein de votre honorable société.",
+      440,
+      timesRomanFont,
+      12
+    );
+    drawTextCentered(
+      "Nous restons à votre entière disposition pour tout renseignement complémentaire.",
+      420,
+      timesRomanFont,
+      12
+    );
+    drawTextCentered(
+      "En vous remerciant pour votre précieux soutien, nous vous prions d’agréer, Madame, Monsieur,",
+      400,
+      timesRomanFont,
+      12
+    );
+    drawTextCentered(
+      "l’expression de nos salutations distinguées.",
+      380,
+      timesRomanFont,
+      12
+    );
+
+    // Enregistrer le PDF modifié
+    const pdfBytes = await pdfDoc.save();
+    const outputPath = path.join(
+      __dirname,
+      `../public/attestation_${Date.now()}.pdf`
+    );
+    fs.writeFileSync(outputPath, pdfBytes);
+
+    // Envoyer le fichier PDF généré en réponse
+    res.download(outputPath);
+  } catch (error) {
+    console.error("Erreur lors de la génération du PDF:", error);
+    res
+      .status(400)
       .send({ message: "Erreur lors de la génération du PDF", error });
   }
 };
