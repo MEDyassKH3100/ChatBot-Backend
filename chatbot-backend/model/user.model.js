@@ -66,6 +66,12 @@ const userSchema = new Schema({
   },
   resetPasswordToken: String,
   resetPasswordExpire: Date,
+  isVerified: {
+    type: Boolean,
+    default: false,
+  },
+  verificationToken: String,
+  verificationExpire: Date,
 });
 
 userSchema.pre("save", async function (next) {

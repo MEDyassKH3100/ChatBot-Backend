@@ -15,4 +15,6 @@ router.route("/forgotpassword").post(UserController.forgotPassword);
 
 router.route("/resetpassword/:token").post(UserController.resetPassword);
 
+router.get("/verifyemail/:token", UserController.verifyEmail); // Route pour la vérification de l'e-mail
+
 module.exports = router;
