@@ -7,7 +7,7 @@ router
   .route("/")
   .post(UserController.register)
   /*.post(UserController.login)*/
-  .get(auth, UserController.getAll);
+  .get(UserController.getAll);
 
 router.route("/login").post(UserController.login);
 
