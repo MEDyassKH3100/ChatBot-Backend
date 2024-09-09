@@ -269,24 +269,89 @@ exports.forgotPassword = async (req, res) => {
 
     // Générer un token de réinitialisation
     const resetToken = crypto.randomBytes(32).toString("hex");
-    const resetPasswordToken = crypto
-      .createHash("sha256")
-      .update(resetToken)
-      .digest("hex");
+    const resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
     const resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
 
     user.resetPasswordToken = resetPasswordToken;
     user.resetPasswordExpire = resetPasswordExpire;
     await user.save();
 
-    // Envoyer un email avec le lien de réinitialisation
+    // Créer l'URL de réinitialisation que vous allez envoyer à l'utilisateur
     const resetUrl = `http://localhost:3000/user/resetpassword/${resetToken}`;
-    const message = `Vous avez demandé une réinitialisation de mot de passe. Cliquez sur le lien suivant pour réinitialiser votre mot de passe : \n\n ${resetUrl}`;
 
+    // Créer le modèle HTML avec un bouton de réinitialisation de mot de passe
+    const htmlTemplate = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Réinitialisation du mot de passe</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+          }
+          .container {
+            background-color: #ffffff;
+            margin: 50px auto;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 600px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+          }
+          .header {
+            text-align: center;
+          }
+          .header h1 {
+            color: #5c5aa7;
+          }
+          .content {
+            margin-top: 20px;
+            text-align: center;
+          }
+          .btn {
+            background-color: #5c5aa7;
+            color: white;
+            padding: 15px 25px;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+            margin-top: 20px;
+          }
+          .footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #888888;
+            font-size: 12px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Réinitialisation du mot de passe</h1>
+          </div>
+          <div class="content">
+            <p>Bonjour,</p>
+            <p>Vous avez demandé une réinitialisation de mot de passe. Cliquez sur le bouton ci-dessous pour réinitialiser votre mot de passe.</p>
+            <a href="${resetUrl}" class="btn">Réinitialiser mon mot de passe</a>
+          </div>
+          <div class="footer">
+            <p>Si vous n'avez pas demandé cette réinitialisation, veuillez ignorer cet e-mail.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Envoyer l'e-mail avec le modèle HTML
     await transporter.sendMail({
       to: user.email,
       subject: "Réinitialisation du mot de passe",
-      text: message,
+      html: htmlTemplate, // Utilisation du modèle HTML
     });
 
     res.status(200).json({ message: "Email envoyé avec succès" });
