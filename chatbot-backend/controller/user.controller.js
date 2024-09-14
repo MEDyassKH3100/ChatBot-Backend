@@ -4,6 +4,11 @@ const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 
+// Fonction pour générer un OTP aléatoire
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000); // Génère un OTP à 6 chiffres
+}
+
 const transporter = nodemailer.createTransport({
   service: "Gmail",
   auth: {
@@ -11,83 +16,6 @@ const transporter = nodemailer.createTransport({
     pass: "vdhu sqjt wuid vjkr",
   },
 });
-
-/*exports.register = (req, res) => {
-  /*
-const user = new UserModel(req.body)
-user.save()
-
-
-  UserModel.create(req.body)
-    .then((newuser) => res.status(200).json(newuser))
-    .catch((err) => res.status(400).json(err));
-};*/
-
-/*exports.register = async (req, res) => {
-  try {
-    const { email } = req.body;
-
-    // Vérifier si l'utilisateur existe déjà
-    const existingUser = await UserModel.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "L'utilisateur existe déjà" });
-    }
-
-    // Créer un nouvel utilisateur (mais ne pas le sauvegarder tout de suite)
-    const newUser = new UserModel(req.body);
-
-    // Générer un jeton de vérification
-    const verificationToken = crypto.randomBytes(32).toString("hex");
-    const verificationExpire = Date.now() + 24 * 60 * 60 * 1000; // Le jeton expire dans 24 heures
-
-    newUser.verificationToken = crypto.createHash("sha256").update(verificationToken).digest("hex");
-    newUser.verificationExpire = verificationExpire;
-
-    // Sauvegarder l'utilisateur
-    await newUser.save();
-
-    // Envoyer un e-mail de vérification
-    const verificationUrl = `http://localhost:3000/user/verifyemail/${verificationToken}`;
-    const message = `Veuillez vérifier votre adresse e-mail en cliquant sur le lien suivant : \n\n ${verificationUrl}`;
-
-    await transporter.sendMail({
-      to: newUser.email,
-      subject: "Vérification de l'adresse e-mail",
-      text: message,
-    });
-
-    res.status(200).json({ message: "Inscription réussie. Veuillez vérifier votre e-mail pour valider votre compte." });
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
-exports.verifyEmail = async (req, res) => {
-  const verificationToken = crypto.createHash("sha256").update(req.params.token).digest("hex");
-
-  try {
-    const user = await UserModel.findOne({
-      verificationToken,
-      verificationExpire: { $gt: Date.now() },
-    });
-
-    if (!user) {
-      return res.status(400).json({ message: "Le jeton est invalide ou a expiré" });
-    }
-
-    user.verificationToken = undefined;
-    user.verificationExpire = undefined;
-    user.isVerified = true; // Marquer l'utilisateur comme vérifié
-
-    await user.save();
-
-    res.status(200).json({ message: "E-mail vérifié avec succès" });
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};*/
-
-
 
 exports.register = async (req, res) => {
   try {
@@ -191,7 +119,10 @@ exports.register = async (req, res) => {
       html: htmlTemplate, // Utilisation de la template HTML
     });
 
-    res.status(200).json({ message: "Inscription réussie. Veuillez vérifier votre e-mail pour valider votre compte." });
+    res.status(200).json({
+      message:
+        "Inscription réussie. Veuillez vérifier votre e-mail pour valider votre compte.",
+    });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -207,7 +138,9 @@ exports.verifyEmail = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(400).json({ message: "Le jeton est invalide ou a expiré" });
+      return res
+        .status(400)
+        .json({ message: "Le jeton est invalide ou a expiré" });
     }
 
     // Marquer l'utilisateur comme vérifié
@@ -223,31 +156,35 @@ exports.verifyEmail = async (req, res) => {
   }
 };
 
-
-
 exports.getAll = (req, res) => {
   UserModel.find()
     .then((users) => res.status(200).json(users))
     .catch((err) => res.status(400).json(err));
 };
 
+// Fonction de login
 exports.login = async (req, res) => {
   const { email, mdp } = req.body;
+
   try {
+    // Rechercher l'utilisateur par email
     const user = await UserModel.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: "Utilisateur non trouvé" });
     }
 
-    if (!user.isVerified) {
-      return res.status(400).json({ message: "Veuillez vérifier votre e-mail avant de vous connecter" });
-    }
-
+    // Comparer le mot de passe fourni avec le mot de passe haché
     const isMatch = await bcrypt.compare(mdp, user.mdp);
+
+    // Ajouter des logs pour voir le mot de passe fourni et celui haché dans la base
+    console.log("Mot de passe fourni :", mdp);
+    console.log("Mot de passe haché stocké :", user.mdp);
+
     if (!isMatch) {
       return res.status(400).json({ message: "Mot de passe incorrect" });
     }
 
+    // Générer un token JWT pour authentifier l'utilisateur
     const token = jwt.sign({ id: user._id }, "your_jwt_secret", {
       expiresIn: "1h",
     });
@@ -258,7 +195,7 @@ exports.login = async (req, res) => {
   }
 };
 
-
+// Route pour demander la réinitialisation du mot de passe
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
   try {
@@ -267,122 +204,69 @@ exports.forgotPassword = async (req, res) => {
       return res.status(400).json({ message: "Utilisateur non trouvé" });
     }
 
-    // Générer un token de réinitialisation
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    const resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
-    const resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+    // Générer l'OTP
+    const otp = Math.floor(100000 + Math.random() * 900000); // Générer un OTP à 6 chiffres
 
-    user.resetPasswordToken = resetPasswordToken;
-    user.resetPasswordExpire = resetPasswordExpire;
+    // Enregistrer l'OTP dans l'utilisateur avec une date d'expiration
+    user.otp = otp;
+    user.otpExpire = Date.now() + 10 * 60 * 1000; // L'OTP expire dans 10 minutes
     await user.save();
 
-    // Créer l'URL de réinitialisation que vous allez envoyer à l'utilisateur
-    const resetUrl = `http://localhost:3000/user/resetpassword/${resetToken}`;
-
-    // Créer le modèle HTML avec un bouton de réinitialisation de mot de passe
+    // Envoyer l'OTP par e-mail
     const htmlTemplate = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Réinitialisation du mot de passe</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-          }
-          .container {
-            background-color: #ffffff;
-            margin: 50px auto;
-            padding: 20px;
-            border-radius: 10px;
-            max-width: 600px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-          }
-          .header {
-            text-align: center;
-          }
-          .header h1 {
-            color: #5c5aa7;
-          }
-          .content {
-            margin-top: 20px;
-            text-align: center;
-          }
-          .btn {
-            background-color: #5c5aa7;
-            color: white;
-            padding: 15px 25px;
-            text-decoration: none;
-            border-radius: 5px;
-            display: inline-block;
-            margin-top: 20px;
-          }
-          .footer {
-            margin-top: 40px;
-            text-align: center;
-            color: #888888;
-            font-size: 12px;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>Réinitialisation du mot de passe</h1>
-          </div>
-          <div class="content">
-            <p>Bonjour,</p>
-            <p>Vous avez demandé une réinitialisation de mot de passe. Cliquez sur le bouton ci-dessous pour réinitialiser votre mot de passe.</p>
-            <a href="${resetUrl}" class="btn">Réinitialiser mon mot de passe</a>
-          </div>
-          <div class="footer">
-            <p>Si vous n'avez pas demandé cette réinitialisation, veuillez ignorer cet e-mail.</p>
-          </div>
-        </div>
-      </body>
-      </html>
+      <h1>Réinitialisation de mot de passe - OTP</h1>
+      <p>Votre OTP est : <strong>${otp}</strong></p>
+      <p>Il expirera dans 10 minutes.</p>
     `;
 
-    // Envoyer l'e-mail avec le modèle HTML
     await transporter.sendMail({
       to: user.email,
-      subject: "Réinitialisation du mot de passe",
-      html: htmlTemplate, // Utilisation du modèle HTML
+      subject: "Réinitialisation de mot de passe - OTP",
+      html: htmlTemplate,
     });
 
-    res.status(200).json({ message: "Email envoyé avec succès" });
+    res.status(200).json({
+      message: "Un email avec l'OTP a été envoyé.",
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ message: "Erreur lors de la génération de l'OTP." });
   }
 };
 
+// Route pour vérifier l'OTP et réinitialiser le mot de passe
 exports.resetPassword = async (req, res) => {
-  const resetPasswordToken = crypto
-    .createHash("sha256")
-    .update(req.params.token)
-    .digest("hex");
+  const { otp, mdp } = req.body;
 
   try {
+    // Rechercher l'utilisateur en fonction de l'OTP et vérifier l'expiration
     const user = await UserModel.findOne({
-      resetPasswordToken,
-      resetPasswordExpire: { $gt: Date.now() },
+      otp,
+      otpExpire: { $gt: Date.now() }, // Assurer que l'OTP n'est pas expiré
     });
 
     if (!user) {
-      return res.status(400).json({ message: "Token invalide ou expiré" });
+      return res.status(400).json({ message: "OTP invalide ou expiré" });
     }
 
-    user.mdp = req.body.mdp;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;
+    // Hacher le nouveau mot de passe
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(mdp, salt);
+
+    // Afficher le mot de passe haché pour vérification
+    console.log("Mot de passe haché sauvegardé :", hashedPassword);
+
+    // Mettre à jour le mot de passe de l'utilisateur avec le mot de passe haché
+    user.mdp = hashedPassword;
+    user.otp = undefined;
+    user.otpExpire = undefined;
+
+    // Sauvegarder les modifications dans la base de données
     await user.save();
 
-    res.status(200).json({ message: "Mot de passe réinitialisé avec succès" });
+    res.status(200).json({ message: "Mot de passe réinitialisé avec succès." });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res
+      .status(400)
+      .json({ message: "Erreur lors de la réinitialisation du mot de passe." });
   }
 };

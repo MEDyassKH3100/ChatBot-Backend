@@ -64,6 +64,8 @@ const userSchema = new Schema({
         "Le mot de passe doit être fort (au moins 8 caractères, incluant une majuscule, une minuscule, un chiffre et un symbole).",
     },
   },
+  otp: Number, // Ajoutez ce champ pour l'OTP
+  otpExpire: Date, // Ajoutez ce champ pour l'expiration de l'OTP
   resetPasswordToken: String,
   resetPasswordExpire: Date,
   isVerified: {
@@ -76,18 +78,32 @@ const userSchema = new Schema({
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified("mdp")) {
-    next();
+    return next(); // Ne pas hacher si le mot de passe n'est pas modifié
   }
   try {
-    var user = this;
     const salt = await bcrypt.genSalt(10);
-    const hashpass = await bcrypt.hash(user.mdp, salt);
-    user.mdp = hashpass;
+    this.mdp = await bcrypt.hash(this.mdp, salt); // Hacher le mot de passe avant de l'enregistrer
     next();
   } catch (error) {
     next(error);
   }
 });
+
+
+/*userSchema.pre("save", async function (next) {
+  if (!this.isModified("mdp")) {
+    next();
+  }
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.mdp = await bcrypt.hash(this.mdp, salt); // Hacher le mot de passe avant de l'enregistrer
+    next();
+  } catch (error) {
+    next(error);
+  }
+});*/
+
+
 
 const UserModel = db.model("user", userSchema);
 module.exports = UserModel;
