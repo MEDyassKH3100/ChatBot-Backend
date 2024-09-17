@@ -167,28 +167,21 @@ exports.login = async (req, res) => {
   const { email, mdp } = req.body;
 
   try {
-    // Rechercher l'utilisateur par email
     const user = await UserModel.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: "Utilisateur non trouvé" });
     }
 
-    // Comparer le mot de passe fourni avec le mot de passe haché
     const isMatch = await bcrypt.compare(mdp, user.mdp);
-
-    // Ajouter des logs pour voir le mot de passe fourni et celui haché dans la base
-    console.log("Mot de passe fourni :", mdp);
-    console.log("Mot de passe haché stocké :", user.mdp);
-
     if (!isMatch) {
       return res.status(400).json({ message: "Mot de passe incorrect" });
     }
 
-    // Générer un token JWT pour authentifier l'utilisateur
     const token = jwt.sign({ id: user._id }, "your_jwt_secret", {
       expiresIn: "1h",
     });
 
+    console.log("Jeton généré lors de la connexion :", token); // Log du token généré
     res.status(200).json({ token, user });
   } catch (error) {
     res.status(400).json({ message: error.message });

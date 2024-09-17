@@ -64,6 +64,18 @@ const userSchema = new Schema({
         "Le mot de passe doit être fort (au moins 8 caractères, incluant une majuscule, une minuscule, un chiffre et un symbole).",
     },
   },
+  paymentReceipt: {
+    type: String,
+    unique: true,
+    required: [true, "Le reçu de paiement est  requis."],
+    validate: {
+      validator: function (v) {
+        return /^[A-Z0-9]{12}$/.test(v); // Vérifie que le reçu est de 12 caractères alphanumériques majuscules
+      },
+      message: (props) =>
+        `${props.value} n'est pas un reçu valide. Le reçu doit contenir exactement 12 caractères composés de chiffres et de lettres majuscules.`,
+    },
+  },
   otp: Number, // Ajoutez ce champ pour l'OTP
   otpExpire: Date, // Ajoutez ce champ pour l'expiration de l'OTP
   resetPasswordToken: String,
@@ -89,7 +101,6 @@ userSchema.pre("save", async function (next) {
   }
 });
 
-
 /*userSchema.pre("save", async function (next) {
   if (!this.isModified("mdp")) {
     next();
@@ -102,8 +113,6 @@ userSchema.pre("save", async function (next) {
     next(error);
   }
 });*/
-
-
 
 const UserModel = db.model("user", userSchema);
 module.exports = UserModel;
