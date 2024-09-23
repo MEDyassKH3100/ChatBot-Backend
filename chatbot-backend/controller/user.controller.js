@@ -17,6 +17,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// Sign up
 exports.register = async (req, res) => {
   try {
     const { email } = req.body;
@@ -128,6 +129,7 @@ exports.register = async (req, res) => {
   }
 };
 
+// reçoit email de verification
 exports.verifyEmail = async (req, res) => {
   const verificationToken = req.params.token;
 
@@ -156,6 +158,46 @@ exports.verifyEmail = async (req, res) => {
   }
 };
 
+// ajouter un admin
+exports.addAdmin = async (req, res) => {
+  try {
+    if (!req.user || req.user.role !== "admin") {
+      return res.status(400).json({
+        message: "Accès refusé. Vous devez être administrateur pour effectuer cette action.",
+      });
+    }
+
+    const { email, nom, prenom, mdp } = req.body;
+
+    // Vérifier si l'email existe déjà
+    const existingUser = await UserModel.findOne({ email });
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ message: "Un utilisateur avec cet email existe déjà." });
+    }
+
+    // Créer un nouvel utilisateur admin
+    const newAdmin = new UserModel({
+      nom,
+      prenom,
+      email,
+      mdp,
+      role: "admin", // Attribuer le rôle 'admin'
+    });
+
+    await newAdmin.save();
+
+    res
+      .status(200)
+      .json({ message: "Administrateur ajouté avec succès.", user: newAdmin });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+
+// afficher tous les users
 exports.getAll = (req, res) => {
   UserModel.find()
     .then((users) => res.status(200).json(users))
@@ -177,7 +219,7 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "Mot de passe incorrect" });
     }
 
-    const token = jwt.sign({ id: user._id }, "your_jwt_secret", {
+    const token = jwt.sign({ id: user._id,role: user.role }, "your_jwt_secret", {
       expiresIn: "1h",
     });
 
@@ -188,11 +230,70 @@ exports.login = async (req, res) => {
   }
 };
 
+// Récupérer les informations de l'utilisateur connecté
+exports.getProfile = async (req, res) => {
+  try {
+    // Récupérer l'ID de l'utilisateur à partir du token JWT
+    const userId = req.user._id;
+    console.log("User ID from token:", userId); // Log pour le débogage
+
+    // Récupérer l'utilisateur dans la base de données
+    const user = await UserModel.findById(userId).select("-mdp"); // Exclure le mot de passe
+    console.log("Found user:", user); // Log pour le débogage
+
+    if (!user) {
+      return res.status(400).json({ message: "Utilisateur non trouvé" });
+    }
+
+    // Renvoyer les informations de l'utilisateur
+    res.status(200).json({ user });
+  } catch (error) {
+    console.error("Error fetching profile:", error.message);
+    res.status(400).json({
+      message: "Erreur lors de la récupération du profil",
+      error: error.message,
+    });
+  }
+};
+
+// update user profile
+exports.updateProfile = async (req, res) => {
+  try {
+    // Récupérer l'utilisateur connecté via son ID dans le token
+    const userId = req.user._id;
+
+    // Récupérer les données à mettre à jour du body de la requête
+    const updates = req.body;
+
+    // Mettre à jour l'utilisateur dans la base de données
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      userId,
+      updates,
+      { new: true, runValidators: true } // Renvoie l'utilisateur mis à jour avec validation
+    );
+
+    if (!updatedUser) {
+      return res.status(400).json({ message: "Utilisateur non trouvé" });
+    }
+
+    res.status(200).json({
+      message: "Profil mis à jour avec succès",
+      user: updatedUser,
+    });
+  } catch (error) {
+    res.status(400).json({
+      message: "Erreur lors de la mise à jour du profil",
+      error: error.message,
+    });
+  }
+};
+
 // Route pour demander la réinitialisation du mot de passe
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
   try {
-    const user = await UserModel.findOne({ email });
+    console.log("email", req.body);
+    const user = await UserModel.findOne({ email: email });
     if (!user) {
       return res.status(400).json({ message: "Utilisateur non trouvé" });
     }
@@ -258,6 +359,8 @@ exports.resetPassword = async (req, res) => {
 
     res.status(200).json({ message: "Mot de passe réinitialisé avec succès." });
   } catch (error) {
+    console.log(error);
+
     res
       .status(400)
       .json({ message: "Erreur lors de la réinitialisation du mot de passe." });

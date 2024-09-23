@@ -23,7 +23,9 @@ const userSchema = new Schema({
   cin: {
     type: Number,
     unique: true,
-    required: [true, "Le numéro CIN est requis."],
+    required: function() {
+      return this.role === 'user';  // Ce champ est requis seulement si le rôle est 'user'
+    },
     validate: {
       validator: function (v) {
         return /^\d{8}$/.test(v);
@@ -34,7 +36,9 @@ const userSchema = new Schema({
   identifiant: {
     type: String,
     unique: true,
-    required: [true, "L'identifiant est requis."],
+    required: function() {
+      return this.role === 'user';  // Ce champ est requis seulement si le rôle est 'user'
+    },
     minlength: [10, "L'identifiant doit comporter 10 caractères."],
     maxlength: [10, "L'identifiant doit comporter 10 caractères."],
     match: [
@@ -67,7 +71,9 @@ const userSchema = new Schema({
   paymentReceipt: {
     type: String,
     unique: true,
-    required: [true, "Le reçu de paiement est  requis."],
+    required: function() {
+      return this.role === 'user';  // Ce champ est requis seulement si le rôle est 'user'
+    },
     validate: {
       validator: function (v) {
         return /^[A-Z0-9]{12}$/.test(v); // Vérifie que le reçu est de 12 caractères alphanumériques majuscules
@@ -75,6 +81,11 @@ const userSchema = new Schema({
       message: (props) =>
         `${props.value} n'est pas un reçu valide. Le reçu doit contenir exactement 12 caractères composés de chiffres et de lettres majuscules.`,
     },
+  },
+  role: {
+    type: String,
+    enum: ["user", "admin"], // Le rôle peut être 'user' ou 'admin'
+    default: "user", // Par défaut, le rôle est 'user'
   },
   otp: Number, // Ajoutez ce champ pour l'OTP
   otpExpire: Date, // Ajoutez ce champ pour l'expiration de l'OTP

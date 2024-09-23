@@ -6,13 +6,11 @@ const userRouter = require("./routers/user.router");
 const morgan = require("morgan");
 const AttestationModel = require("./model/attestation.model");
 const attestationRouter = require("./routers/attestation.route");
-
-app.use(express.json());
-// Utilisez /api comme préfixe pour toutes les routes
-
-// create express server
-app.use(morgan("dev"));
+const auth = require("./auth");
 const port = 3000;
+app.use(express.json());
+
+app.use(morgan("dev"));
 
 app.use("/user", userRouter);
 app.use("/attestation", attestationRouter);
