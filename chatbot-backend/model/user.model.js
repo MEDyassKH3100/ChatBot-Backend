@@ -87,6 +87,7 @@ const userSchema = new Schema({
     enum: ["user", "admin"], // Le rôle peut être 'user' ou 'admin'
     default: "user", // Par défaut, le rôle est 'user'
   },
+  jwtToken: { type: String },
   otp: Number, // Ajoutez ce champ pour l'OTP
   otpExpire: Date, // Ajoutez ce champ pour l'expiration de l'OTP
   resetPasswordToken: String,

@@ -1,28 +1,20 @@
+// auth.js
 const jwt = require('jsonwebtoken');
 
-function auth(role = null) {
-  return (req, res, next) => {
-    const token = req.headers['x-auth-token'];
+module.exports = (req, res, next) => {
+    // Extraction du token de l'en-tête Authorization
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer Token
+
     if (!token) {
-      return res.status(400).json({ message: "Accès refusé. Aucun token fourni." });
+        return res.status(400).json({ message: "Accès refusé. Aucun token fourni." });
     }
 
     try {
-      const decoded = jwt.verify(token, 'your_jwt_secret');
-      req.user = decoded;
-      
-      // Si un rôle est spécifié, vérifier ce rôle
-      if (role && req.user.role !== role) {
-        console.log("Role required:", role, "User role:", req.user.role);  // Ajouter pour déboguer
-        return res.status(400).json({ message: "Accès refusé. Rôle insuffisant." });
-      }
-
-
-      next();
+        const decoded = jwt.verify(token, 'your_jwt_secret');
+        req.user = decoded;
+        next();
     } catch (ex) {
-      res.status(400).send('Token invalide.');
+        res.status(400).json({ message: 'Token invalide.' });
     }
-  };
-}
-
-module.exports = auth; // Assurez-vous que c'est ajouté
+};

@@ -7,8 +7,9 @@ router
   .post(UserController.register) // Sign UP
   .get(UserController.getAll); // afficher les users
   
-// Route pour ajouter un administrateur (seulement accessible aux admins)
+/*/ Route pour ajouter un administrateur (seulement accessible aux admins)
 router.post("/admin", auth("admin"), UserController.addAdmin);
+*/
 
 //Sing In
 router.route("/login").post(UserController.login);

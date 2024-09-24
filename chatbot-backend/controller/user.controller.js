@@ -158,12 +158,13 @@ exports.verifyEmail = async (req, res) => {
   }
 };
 
-// ajouter un admin
+/*/ ajouter un admin
 exports.addAdmin = async (req, res) => {
   try {
     if (!req.user || req.user.role !== "admin") {
       return res.status(400).json({
-        message: "Accès refusé. Vous devez être administrateur pour effectuer cette action.",
+        message:
+          "Accès refusé. Vous devez être administrateur pour effectuer cette action.",
       });
     }
 
@@ -195,8 +196,7 @@ exports.addAdmin = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
-
-
+*/
 // afficher tous les users
 exports.getAll = (req, res) => {
   UserModel.find()
@@ -219,10 +219,15 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "Mot de passe incorrect" });
     }
 
-    const token = jwt.sign({ id: user._id,role: user.role }, "your_jwt_secret", {
-      expiresIn: "1h",
-    });
-
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      "your_jwt_secret",
+      {
+        expiresIn: "1h",
+      }
+    );
+    user.jwtToken = token;
+    await user.save();
     console.log("Jeton généré lors de la connexion :", token); // Log du token généré
     res.status(200).json({ token, user });
   } catch (error) {
@@ -234,7 +239,7 @@ exports.login = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     // Récupérer l'ID de l'utilisateur à partir du token JWT
-    const userId = req.user._id;
+    const userId = req.user.id;
     console.log("User ID from token:", userId); // Log pour le débogage
 
     // Récupérer l'utilisateur dans la base de données
@@ -258,32 +263,34 @@ exports.getProfile = async (req, res) => {
 
 // update user profile
 exports.updateProfile = async (req, res) => {
+  console.log("Update Profile: Start");
   try {
-    // Récupérer l'utilisateur connecté via son ID dans le token
-    const userId = req.user._id;
+    if (!req.user || !req.user.id) {
+      console.log("Update Profile: No user or user ID provided");
+      return res.status(400).json({ message: "No authenticated user." });
+    }
+    console.log("Update Profile: User ID", req.user.id);
 
-    // Récupérer les données à mettre à jour du body de la requête
     const updates = req.body;
+    console.log("Update Profile: Updates", updates);
 
-    // Mettre à jour l'utilisateur dans la base de données
-    const updatedUser = await UserModel.findByIdAndUpdate(
-      userId,
-      updates,
-      { new: true, runValidators: true } // Renvoie l'utilisateur mis à jour avec validation
-    );
+    const updatedUser = await UserModel.findByIdAndUpdate(req.user.id, updates, { new: true, runValidators: true });
 
     if (!updatedUser) {
-      return res.status(400).json({ message: "Utilisateur non trouvé" });
+      console.log("Update Profile: User not found");
+      return res.status(400).json({ message: "User not found" });
     }
 
+    console.log("Update Profile: Success", updatedUser);
     res.status(200).json({
-      message: "Profil mis à jour avec succès",
-      user: updatedUser,
+      message: "Profile successfully updated",
+      user: updatedUser
     });
   } catch (error) {
+    console.error("Update Profile: Error", error);
     res.status(400).json({
-      message: "Erreur lors de la mise à jour du profil",
-      error: error.message,
+      message: "Error updating profile",
+      error: error.message
     });
   }
 };
