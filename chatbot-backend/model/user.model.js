@@ -88,6 +88,10 @@ const userSchema = new Schema({
     default: "user", // Par défaut, le rôle est 'user'
   },
   jwtToken: { type: String },
+  isBanned: {
+    type: Boolean,
+    default: false,  // Par défaut, l'utilisateur n'est pas banni
+},
   otp: Number, // Ajoutez ce champ pour l'OTP
   otpExpire: Date, // Ajoutez ce champ pour l'expiration de l'OTP
   resetPasswordToken: String,

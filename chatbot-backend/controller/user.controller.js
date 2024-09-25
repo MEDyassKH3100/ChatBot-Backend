@@ -129,7 +129,7 @@ exports.register = async (req, res) => {
   }
 };
 
-// reçoit email de verification
+// reçoit email de vérification
 exports.verifyEmail = async (req, res) => {
   const verificationToken = req.params.token;
 
@@ -140,9 +140,14 @@ exports.verifyEmail = async (req, res) => {
     });
 
     if (!user) {
-      return res
-        .status(400)
-        .json({ message: "Le jeton est invalide ou a expiré" });
+      return res.status(400).send(`
+        <html>
+        <body style="font-family: Arial, sans-serif; text-align: center; padding-top: 20px;">
+          <h1>Erreur</h1>
+          <p>Le jeton est invalide ou a expiré.</p>
+        </body>
+        </html>
+      `);
     }
 
     // Marquer l'utilisateur comme vérifié
@@ -152,25 +157,93 @@ exports.verifyEmail = async (req, res) => {
 
     await user.save();
 
-    res.status(200).json({ message: "E-mail vérifié avec succès" });
+    // Envoyer une réponse HTML
+    res.status(200).send(`
+      <!DOCTYPE html>
+      <html lang="fr">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Confirmation de vérification</title>
+          <style>
+              body {
+                  font-family: 'Arial', sans-serif;
+                  background-color: #f7f7f7;
+                  margin: 0;
+                  padding: 0;
+                  display: flex;
+                  justify-content: center;
+                  align-items: center;
+                  height: 100vh;
+              }
+              .container {
+                  background-color: #ffffff;
+                  padding: 40px;
+                  border-radius: 8px;
+                  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+                  text-align: center;
+                  max-width: 400px;
+              }
+              h1 {
+                  color: #4CAF50;
+                  font-size: 24px;
+              }
+              p {
+                  color: #555;
+                  font-size: 16px;
+                  margin-top: 20px;
+              }
+              a {
+                  display: inline-block;
+                  margin-top: 30px;
+                  padding: 10px 20px;
+                  background-color: #4CAF50;
+                  color: white;
+                  text-decoration: none;
+                  border-radius: 5px;
+                  transition: background-color 0.3s;
+              }
+              a:hover {
+                  background-color: #45a049;
+              }
+          </style>
+      </head>
+      <body>
+          <div class="container">
+              <h1>Votre e-mail a été vérifié !</h1>
+              <p>Merci d'avoir confirmé votre adresse e-mail. Vous pouvez maintenant profiter pleinement de votre compte.</p>
+              <a href="http://localhost:3000/login">Se connecter</a>
+          </div>
+      </body>
+      </html>
+    `);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).send(`
+      <html>
+      <body style="font-family: Arial, sans-serif; text-align: center; padding-top: 20px;">
+        <h1>Erreur technique</h1>
+        <p>${error.message}</p>
+      </body>
+      </html>
+    `);
   }
 };
 
-/*/ ajouter un admin
+// Fonction pour ajouter un administrateur
 exports.addAdmin = async (req, res) => {
   try {
-    if (!req.user || req.user.role !== "admin") {
-      return res.status(400).json({
-        message:
-          "Accès refusé. Vous devez être administrateur pour effectuer cette action.",
-      });
+    if (req.user.role !== "admin") {
+      return res
+        .status(400)
+        .json({
+          message:
+            "Accès refusé. Seuls les administrateurs peuvent effectuer cette action.",
+        });
     }
 
     const { email, nom, prenom, mdp } = req.body;
 
-    // Vérifier si l'email existe déjà
+    // Vérifier si l'utilisateur existe déjà
     const existingUser = await UserModel.findOne({ email });
     if (existingUser) {
       return res
@@ -178,25 +251,73 @@ exports.addAdmin = async (req, res) => {
         .json({ message: "Un utilisateur avec cet email existe déjà." });
     }
 
-    // Créer un nouvel utilisateur admin
-    const newAdmin = new UserModel({
+    // Créer un nouvel utilisateur avec le rôle admin
+    const newUser = new UserModel({
       nom,
       prenom,
       email,
       mdp,
-      role: "admin", // Attribuer le rôle 'admin'
+      role: "admin",
     });
 
-    await newAdmin.save();
+    // Hasher le mot de passe avant de sauvegarder
+    const salt = await bcrypt.genSalt(10);
+    newUser.mdp = await bcrypt.hash(mdp, salt);
+
+    await newUser.save();
 
     res
       .status(200)
-      .json({ message: "Administrateur ajouté avec succès.", user: newAdmin });
+      .json({ message: "Administrateur ajouté avec succès.", user: newUser });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res
+      .status(400)
+      .json({
+        message: "Erreur lors de la création de l'administrateur.",
+        error: error.message,
+      });
   }
 };
-*/
+// Fonction pour bannir un utilisateur
+exports.banUser = async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res
+        .status(400)
+        .json({
+          message:
+            "Accès refusé. Seuls les administrateurs peuvent effectuer cette action.",
+        });
+    }
+
+    const { userId } = req.params; // L'ID de l'utilisateur à bannir est passé dans l'URL
+
+    // Récupérer l'utilisateur dans la base de données
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(400).json({ message: "Utilisateur non trouvé." });
+    }
+
+    // Modifier le statut de l'utilisateur pour indiquer qu'il est banni
+    user.isBanned = true;
+    await user.save();
+
+    res
+      .status(200)
+      .json({
+        message: "Utilisateur banni avec succès.",
+        user: { id: user.id, nom: user.nom },
+      });
+  } catch (error) {
+    res
+      .status(400)
+      .json({
+        message: "Erreur lors du bannissement de l'utilisateur.",
+        error: error.message,
+      });
+  }
+};
+
 // afficher tous les users
 exports.getAll = (req, res) => {
   UserModel.find()
@@ -220,7 +341,7 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      { id: user.id, role: user.role },
       "your_jwt_secret",
       {
         expiresIn: "1h",
@@ -274,7 +395,11 @@ exports.updateProfile = async (req, res) => {
     const updates = req.body;
     console.log("Update Profile: Updates", updates);
 
-    const updatedUser = await UserModel.findByIdAndUpdate(req.user.id, updates, { new: true, runValidators: true });
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      req.user.id,
+      updates,
+      { new: true, runValidators: true }
+    );
 
     if (!updatedUser) {
       console.log("Update Profile: User not found");
@@ -284,13 +409,13 @@ exports.updateProfile = async (req, res) => {
     console.log("Update Profile: Success", updatedUser);
     res.status(200).json({
       message: "Profile successfully updated",
-      user: updatedUser
+      user: updatedUser,
     });
   } catch (error) {
     console.error("Update Profile: Error", error);
     res.status(400).json({
       message: "Error updating profile",
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -349,25 +474,17 @@ exports.resetPassword = async (req, res) => {
       return res.status(400).json({ message: "OTP invalide ou expiré" });
     }
 
-    // Hacher le nouveau mot de passe
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(mdp, salt);
-
-    // Afficher le mot de passe haché pour vérification
-    console.log("Mot de passe haché sauvegardé :", hashedPassword);
-
-    // Mettre à jour le mot de passe de l'utilisateur avec le mot de passe haché
-    user.mdp = hashedPassword;
+    // Mettre à jour le mot de passe de l'utilisateur
+    user.mdp = mdp; // Assigner le nouveau mot de passe directement
     user.otp = undefined;
     user.otpExpire = undefined;
 
     // Sauvegarder les modifications dans la base de données
-    await user.save();
+    await user.save(); // Le middleware de hachage va s'activer ici
 
     res.status(200).json({ message: "Mot de passe réinitialisé avec succès." });
   } catch (error) {
     console.log(error);
-
     res
       .status(400)
       .json({ message: "Erreur lors de la réinitialisation du mot de passe." });
