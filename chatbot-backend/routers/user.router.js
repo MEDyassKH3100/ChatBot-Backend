@@ -11,7 +11,7 @@ router
 router.post("/admin", auth, UserController.addAdmin);
 
 // Route pour bannir un utilisateur
-router.put('/ban/:userId', auth, UserController.banUser);
+router.put("/ban/:userId", auth, UserController.banUser);
 
 //Sing In
 router.route("/login").post(UserController.login);

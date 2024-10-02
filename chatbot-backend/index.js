@@ -7,6 +7,7 @@ const morgan = require("morgan");
 const AttestationModel = require("./model/attestation.model");
 const attestationRouter = require("./routers/attestation.route");
 const auth = require("./auth");
+
 // Chemin absolu vers le dossier public
 app.use(express.static('public'));
 

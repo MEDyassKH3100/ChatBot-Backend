@@ -5,21 +5,12 @@ const PDFKit = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
 const { PDFDocument, rgb, StandardFonts } = require("pdf-lib");
+
+
 //faire une reclamation
 exports.createAttestation = async (req, res) => {
   try {
     const studentId = new mongoose.Types.ObjectId(req.user.id);
-
-    // Si ce n'est pas une réclamation, on vérifie le paymentReceipt
-    if (
-      req.body.type &&
-      req.body.type !== "Reclamation" &&
-      !req.body.paymentReceipt
-    ) {
-      return res.status(400).json({
-        message: "Le reçu de paiement est requis pour ce type d'attestation.",
-      });
-    }
 
     const attestation = new Attestation({
       studentId: studentId,
@@ -29,7 +20,6 @@ exports.createAttestation = async (req, res) => {
       year: `${req.body.year}/${parseInt(req.body.year) + 1}`, // Année universitaire formatée
       status: "En attente", // Statut initial
       additionalDetails: req.body.additionalDetails || "", // Détails supplémentaires s'il y en a
-      paymentReceipt: req.body.paymentReceipt || null, // Reçu de paiement, peut être null pour les réclamations
     });
 
     await attestation.save(); // Enregistrer l'attestation
@@ -167,10 +157,10 @@ exports.generatePDF = async (req, res) => {
 
 exports.generateStageRequestPDF = async (req, res) => {
   try {
-    const { paymentReceipt, fullName, course, year } = req.body;
+    const { fullName, course, year } = req.body;
 
     // Vérifier que les informations d'entrée sont présentes
-    if (!paymentReceipt || !fullName || !course || !year) {
+    if (!fullName || !course || !year) {
       return res.status(400).json({
         message: "Tous les champs doivent être remplis.",
       });
@@ -185,18 +175,7 @@ exports.generateStageRequestPDF = async (req, res) => {
     }
     // Ajoutez un log pour vérifier si l'utilisateur est trouvé
     console.log("Utilisateur trouvé :", user);
-    console.log("Reçu fourni :", paymentReceipt);
-    console.log("Reçu dans la base de données :", user.paymentReceipt);
 
-    // Comparer les reçus de paiement
-    if (
-      !user.paymentReceipt ||
-      user.paymentReceipt.toUpperCase() !== paymentReceipt.toUpperCase()
-    ) {
-      return res.status(400).json({
-        message: "Reçu de paiement invalide. Veuillez entrer un reçu valide.",
-      });
-    }
     // Charger le template PDF
     try {
       const templatePath = path.join(__dirname, "../templates/attestation.pdf");
@@ -350,7 +329,7 @@ exports.generateStageRequestPDF = async (req, res) => {
         type: "Attestation de Stage",
         course,
         year,
-        paymentReceipt, // Enregistrement du reçu de paiement
+
         status: "Validé", // Statut validé car le reçu est correct
       });
 

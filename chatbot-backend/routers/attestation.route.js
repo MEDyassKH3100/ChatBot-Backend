@@ -22,6 +22,10 @@ router.delete("/:id", auth, attestationController.deleteAttestation);
 router.post("/generate-pdf/:id", auth, attestationController.generatePDF);
 
 // **Nouvelle Route** pour générer un PDF de demande de stage
-router.post("/generate-stage-request-pdf", auth, attestationController.generateStageRequestPDF);
+router.post(
+  "/generate-stage-request-pdf",
+  auth,
+  attestationController.generateStageRequestPDF
+);
 
 module.exports = router;

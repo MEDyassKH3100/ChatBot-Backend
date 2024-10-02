@@ -26,12 +26,7 @@ const attestationSchema = new Schema({
 
   additionalDetails: { type: String, default: "" },
   pdfPath: { type: String },
-  paymentReceipt: {
-    type: String,
-    required: function () {
-      return this.type !== "Reclamation"; // Le paymentReceipt n'est requis que pour les autres types
-    },
-  },
+ 
 });
 
 // Middleware pour générer le fullName avant de sauvegarder

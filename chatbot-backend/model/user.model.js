@@ -68,20 +68,7 @@ const userSchema = new Schema({
         "Le mot de passe doit être fort (au moins 8 caractères, incluant une majuscule, une minuscule, un chiffre et un symbole).",
     },
   },
-  paymentReceipt: {
-    type: String,
-    unique: true,
-    required: function() {
-      return this.role === 'user';  // Ce champ est requis seulement si le rôle est 'user'
-    },
-    validate: {
-      validator: function (v) {
-        return /^[A-Z0-9]{12}$/.test(v); // Vérifie que le reçu est de 12 caractères alphanumériques majuscules
-      },
-      message: (props) =>
-        `${props.value} n'est pas un reçu valide. Le reçu doit contenir exactement 12 caractères composés de chiffres et de lettres majuscules.`,
-    },
-  },
+  
   role: {
     type: String,
     enum: ["user", "admin"], // Le rôle peut être 'user' ou 'admin'
@@ -117,18 +104,7 @@ userSchema.pre("save", async function (next) {
   }
 });
 
-/*userSchema.pre("save", async function (next) {
-  if (!this.isModified("mdp")) {
-    next();
-  }
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.mdp = await bcrypt.hash(this.mdp, salt); // Hacher le mot de passe avant de l'enregistrer
-    next();
-  } catch (error) {
-    next(error);
-  }
-});*/
+
 
 const UserModel = db.model("user", userSchema);
 module.exports = UserModel;

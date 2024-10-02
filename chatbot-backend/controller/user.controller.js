@@ -4,6 +4,9 @@ const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 
+
+
+
 // Fonction pour générer un OTP aléatoire
 function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000); // Génère un OTP à 6 chiffres
