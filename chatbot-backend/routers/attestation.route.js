@@ -3,6 +3,8 @@ const router = express.Router();
 const attestationController = require("../controller/attestation.controller");
 const auth = require("../auth");
 
+router.get("/my-pdfs", auth, attestationController.getUserPDFs);
+
 // Route pour créer une nouvelle attestation
 router.post("/", auth, attestationController.createAttestation);
 
@@ -27,5 +29,8 @@ router.post(
   auth,
   attestationController.generateStageRequestPDF
 );
+
+
+
 
 module.exports = router;

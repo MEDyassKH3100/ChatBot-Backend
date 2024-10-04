@@ -107,8 +107,9 @@ exports.generatePDF = async (req, res) => {
       return res.status(400).send({ message: "Attestation non trouvée" });
     }
 
-    // Créer le répertoire public s'il n'existe pas déjà
-    const publicDir = path.join(__dirname, "../public");
+    
+    // S'assurer que le répertoire public existe
+    const publicDir = path.join(__dirname, '../public');
     if (!fs.existsSync(publicDir)) {
       fs.mkdirSync(publicDir);
     }
@@ -123,7 +124,7 @@ exports.generatePDF = async (req, res) => {
     const writeStream = fs.createWriteStream(filePath);
     writeStream.on("error", (err) => {
       console.error("Erreur lors de l'écriture du fichier:", err);
-      return res.status(500).send({
+      return res.status(400).send({
         message: "Erreur lors de l'écriture du fichier PDF",
         error: err,
       });
@@ -316,6 +317,7 @@ exports.generateStageRequestPDF = async (req, res) => {
 
       // Enregistrer le PDF modifié
       const pdfBytes = await pdfDoc.save();
+      
       const outputPath = path.join(
         __dirname,
         `../public/attestation_de_stage${Date.now()}.pdf`
@@ -329,7 +331,7 @@ exports.generateStageRequestPDF = async (req, res) => {
         type: "Attestation de Stage",
         course,
         year,
-
+        pdfPath: outputPath ,
         status: "Validé", // Statut validé car le reçu est correct
       });
 
@@ -350,5 +352,18 @@ exports.generateStageRequestPDF = async (req, res) => {
       message: "Erreur lors de la génération du PDF",
       error,
     });
+  }
+
+  
+};
+
+exports.getUserPDFs = async (req, res) => {
+  try {
+    const userId = req.user.id;  // L'ID de l'utilisateur est obtenu via le JWT
+    const attestations = await Attestation.find({ studentId: userId }).select('pdfPath type dateIssued');
+    res.status(200).json(attestations);
+  } catch (error) {
+    console.error("Erreur lors de la récupération des PDFs:", error);
+    res.status(400).send({ message: "Erreur lors de la récupération des PDFs", error });
   }
 };

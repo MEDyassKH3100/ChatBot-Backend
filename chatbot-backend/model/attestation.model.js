@@ -37,13 +37,7 @@ attestationSchema.pre("save", async function (next) {
   }
   next();
 });
-attestationSchema.index(
-  { studentId: 1, paymentReceipt: 1 },
-  {
-    unique: true,
-    partialFilterExpression: { paymentReceipt: { $exists: true, $ne: null }, type: { $ne: "Reclamation" } }
-  }
-);
+
 
 // Exportation du modèle d'attestation
 module.exports = mongoose.model("Attestation", attestationSchema);
