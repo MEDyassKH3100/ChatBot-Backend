@@ -13,6 +13,7 @@ app.use(express.static('public'));
 
 // Middleware pour servir le favicon
 app.use('/favicon.ico', express.static('public/favicon.ico'));
+app.use('/public', express.static('public'));
 
 const port = 3000;
 app.use(express.json());

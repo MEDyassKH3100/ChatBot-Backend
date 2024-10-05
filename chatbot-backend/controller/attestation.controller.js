@@ -146,12 +146,13 @@ exports.generatePDF = async (req, res) => {
 
     // Envoyer le fichier PDF généré en réponse
     writeStream.on("finish", () => {
-      res.download(filePath);
-    });
+      const fileUrl = `${req.protocol}://${req.hostname}:${port}/public/${path.basename(filePath)}`;
+      res.send({url: fileUrl});
+  });
   } catch (error) {
     console.error("Erreur lors de la génération du PDF:", error);
     res
-      .status(500)
+      .status(400)
       .send({ message: "Erreur lors de la génération du PDF", error });
   }
 };
