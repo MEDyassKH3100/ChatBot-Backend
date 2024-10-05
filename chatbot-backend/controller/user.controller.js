@@ -263,11 +263,12 @@ exports.addAdmin = async (req, res) => {
       role: "admin",
     });
 
-    // Hasher le mot de passe avant de sauvegarder
-    const salt = await bcrypt.genSalt(10);
-    newUser.mdp = await bcrypt.hash(mdp, salt);
-
+    newUser.mdp = mdp; // Assigner le nouveau mot de passe directement
     await newUser.save();
+
+
+    
+
 
     res
       .status(200)
