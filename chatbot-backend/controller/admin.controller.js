@@ -3,7 +3,7 @@ const User = require("../model/user.model");
 const mongoose = require("mongoose");
 
 // Fonction pour obtenir le nombre total d'utilisateurs
-exports.getTotalUsers = async (req, res) => {
+exports.getTotalClient = async (req, res) => {
     try {
         const userCount = await User.countDocuments();
         res.json({ totalUsers: userCount });
@@ -21,7 +21,15 @@ exports.getTotalAdmins = async (req, res) => {
         res.status(400).send({ message: "Erreur lors de la récupération du nombre d'administrateurs", error });
     }
 };
-
+// Fonction pour obtenir le nombre total d'administrateurs
+exports.getTotalUsers = async (req, res) => {
+    try {
+        const userCount = await User.countDocuments({ role: 'user' });
+        res.json({ totalUsers: userCount });
+    } catch (error) {
+        res.status(400).send({ message: "Erreur lors de la récupération du nombre d'administrateurs", error });
+    }
+};
 // Fonction pour obtenir le nombre total d'attestations
 exports.getTotalAttestations = async (req, res) => {
     try {
@@ -39,6 +47,16 @@ exports.getTotalReclamations = async (req, res) => {
         res.json({ totalReclamations: reclamationCount });
     } catch (error) {
         res.status(400).send({ message: "Erreur lors de la récupération du nombre de réclamations", error });
+    }
+};
+
+// Fonction pour obtenir le nombre total de réclamations
+exports.getTotalAttestationStage = async (req, res) => {
+    try {
+        const reclamationCount = await Attestation.countDocuments({ type: 'Attestation de Stage' });
+        res.json({ totalReclamations: reclamationCount });
+    } catch (error) {
+        res.status(400).send({ message: "Erreur lors de la récupération du nombre des Attestations du Stage", error });
     }
 };
 
@@ -62,5 +80,14 @@ exports.filterUsers = async (req, res) => {
         res.status(400).send({ message: "Erreur lors du filtrage des utilisateurs", error });
     }
 };
+exports.filterAttestations = async (req, res) => {
+    try {
+        const filters = req.query; // Prend les filtres depuis les paramètres de la requête
+        const Attestations = await Attestation.find(filters);
+        res.json(Attestations);
+    } catch (error) {
+        res.status(400).send({ message: "Erreur lors du filtrage des utilisateurs", error });
+    }
+};
 
-// Export d'autres méthodes similaires pour les attestations ou les réclamations si nécessaire
+
