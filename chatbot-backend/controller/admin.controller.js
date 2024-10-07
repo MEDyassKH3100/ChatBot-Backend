@@ -6,7 +6,7 @@ const mongoose = require("mongoose");
 exports.getTotalClient = async (req, res) => {
     try {
         const userCount = await User.countDocuments();
-        res.json({ totalUsers: userCount });
+        res.json({ totalClients: userCount });
     } catch (error) {
         res.status(400).send({ message: "Erreur lors de la récupération du nombre d'utilisateurs", error });
     }
