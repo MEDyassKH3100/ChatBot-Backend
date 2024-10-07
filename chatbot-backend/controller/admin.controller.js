@@ -53,8 +53,8 @@ exports.getTotalReclamations = async (req, res) => {
 // Fonction pour obtenir le nombre total de réclamations
 exports.getTotalAttestationStage = async (req, res) => {
     try {
-        const reclamationCount = await Attestation.countDocuments({ type: 'Attestation de Stage' });
-        res.json({ totalReclamations: reclamationCount });
+        const stageCount = await Attestation.countDocuments({ type: 'Attestation de Stage' });
+        res.json({ totalAttestationsStage: stageCount });
     } catch (error) {
         res.status(400).send({ message: "Erreur lors de la récupération du nombre des Attestations du Stage", error });
     }
