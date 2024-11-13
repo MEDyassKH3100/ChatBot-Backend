@@ -390,14 +390,12 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   console.log("Update Profile: Start");
   try {
-    if (!req.user || !req.user.id) {
-      console.log("Update Profile: No user or user ID provided");
-      return res.status(400).json({ message: "No authenticated user." });
-    }
-    console.log("Update Profile: User ID", req.user.id);
-
     const updates = req.body;
-    console.log("Update Profile: Updates", updates);
+
+    // Ignore le mot de passe si non fourni
+    if (!updates.mdp) {
+      delete updates.mdp;
+    }
 
     const updatedUser = await UserModel.findByIdAndUpdate(
       req.user.id,
@@ -423,6 +421,7 @@ exports.updateProfile = async (req, res) => {
     });
   }
 };
+
 
 // Route pour demander la réinitialisation du mot de passe
 exports.forgotPassword = async (req, res) => {

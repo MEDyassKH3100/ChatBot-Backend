@@ -63,7 +63,7 @@ exports.getTotalAttestationStage = async (req, res) => {
 // Fonction pour afficher les activités des utilisateurs (simplifiée)
 exports.getUserActivities = async (req, res) => {
     try {
-        const activities = await User.find().select('name activityLogs');
+        const activities = await User.find({}, {name: 1, activityLogs: 1})
         res.json(activities);
     } catch (error) {
         res.status(400).send({ message: "Erreur lors de la récupération des activités des utilisateurs", error });
